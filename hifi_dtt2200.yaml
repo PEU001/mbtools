@@ -1,0 +1,237 @@
+title: "HiFi DTT2200 + DAC8x"
+description: "Stereo -> 5.1 avec LR4, PEQ, shelves, loudness sub, delay sub"
+
+devices:
+  samplerate: 48000
+  chunksize: 1024
+
+  capture:
+    type: Alsa
+    channels: 2
+    device: "default"
+    format: S32LE
+
+  playback:
+    type: Alsa
+    channels: 6
+    device: "hw:0,0"
+    format: S32LE
+
+mixers:
+  to6:
+    description: "Expand stereo to 6ch : FL FR C SL SR SUB"
+    channels: { in: 2, out: 6 }
+    mapping:
+      # FL
+      - dest: 0
+        sources: [ { channel: 0, gain: 0, inverted: false } ]
+
+      # FR
+      - dest: 1
+        sources: [ { channel: 1, gain: 0, inverted: false } ]
+
+      # C = L + R (−3 dB / canal)
+      - dest: 2
+        sources:
+          - { channel: 0, gain: -3, inverted: false }
+          - { channel: 1, gain: -3, inverted: false }
+
+      # SL = L
+      - dest: 3
+        sources: [ { channel: 0, gain: 0, inverted: false } ]
+
+      # SR = R
+      - dest: 4
+        sources: [ { channel: 1, gain: 0, inverted: false } ]
+
+      # SUB = L + R (−3 dB / canal)
+      - dest: 5
+        sources:
+          - { channel: 0, gain: -3, inverted: false }
+          - { channel: 1, gain: -3, inverted: false }
+
+filters:
+
+  # ============================================================
+  #           COUPURE LINKWITZ-RILEY 4e ORDRE (120 Hz)
+  # ============================================================
+  hp_lr4_120_a: { type: Biquad, parameters: { type: Highpass, freq: 120, q: 0.707 } }
+  hp_lr4_120_b: { type: Biquad, parameters: { type: Highpass, freq: 120, q: 0.707 } }
+  lp_lr4_120_a: { type: Biquad, parameters: { type: Lowpass,  freq: 120, q: 0.707 } }
+  lp_lr4_120_b: { type: Biquad, parameters: { type: Lowpass,  freq: 120, q: 0.707 } }
+
+  # ============================================================
+  #              SHELVES Bass / Mid / Treble
+  # ============================================================
+  # Bass
+  ls_bass_FL: { type: Biquad, parameters: { type: Lowshelf,  freq: 120, q: 0.7, gain: 0 } }
+  ls_bass_FR: { type: Biquad, parameters: { type: Lowshelf,  freq: 120, q: 0.7, gain: 0 } }
+  ls_bass_C:  { type: Biquad, parameters: { type: Lowshelf,  freq: 120, q: 0.7, gain: 0 } }
+  ls_bass_SL: { type: Biquad, parameters: { type: Lowshelf,  freq: 120, q: 0.7, gain: 0 } }
+  ls_bass_SR: { type: Biquad, parameters: { type: Lowshelf,  freq: 120, q: 0.7, gain: 0 } }
+  ls_bass_SUB:{ type: Biquad, parameters: { type: Lowshelf,  freq: 60,  q: 0.7, gain: 0 } }
+
+  # Mid
+  mid_FL: { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  mid_FR: { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  mid_C:  { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  mid_SL: { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  mid_SR: { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  mid_SUB:{ type: Biquad, parameters: { type: Peaking, freq: 80,   q: 1.0, gain: 0 } }
+
+  # Treble
+  hs_treble_FL: { type: Biquad, parameters: { type: Highshelf, freq: 6000, q: 0.7, gain: 0 } }
+  hs_treble_FR: { type: Biquad, parameters: { type: Highshelf, freq: 6000, q: 0.7, gain: 0 } }
+  hs_treble_C:  { type: Biquad, parameters: { type: Highshelf, freq: 6000, q: 0.7, gain: 0 } }
+  hs_treble_SL: { type: Biquad, parameters: { type: Highshelf, freq: 6000, q: 0.7, gain: 0 } }
+  hs_treble_SR: { type: Biquad, parameters: { type: Highshelf, freq: 6000, q: 0.7, gain: 0 } }
+  hs_treble_SUB:{ type: Biquad, parameters: { type: Highshelf, freq: 200,  q: 0.7, gain: 0 } }
+
+  # ============================================================
+  #                 EQ PARAMÉTRIQUE PAR CANAL
+  # ============================================================
+  # FL
+  peq_FL_1: { type: Biquad, parameters: { type: Peaking, freq: 90,   q: 1.2, gain: 0 } }
+  peq_FL_2: { type: Biquad, parameters: { type: Peaking, freq: 800,  q: 1.0, gain: 0 } }
+  peq_FL_3: { type: Biquad, parameters: { type: Peaking, freq: 4500, q: 1.0, gain: 0 } }
+
+  # FR
+  peq_FR_1: { type: Biquad, parameters: { type: Peaking, freq: 90,   q: 1.2, gain: 0 } }
+  peq_FR_2: { type: Biquad, parameters: { type: Peaking, freq: 800,  q: 1.0, gain: 0 } }
+  peq_FR_3: { type: Biquad, parameters: { type: Peaking, freq: 4500, q: 1.0, gain: 0 } }
+
+  # C
+  peq_C_1:  { type: Biquad, parameters: { type: Peaking, freq: 120,  q: 1.2, gain: 0 } }
+  peq_C_2:  { type: Biquad, parameters: { type: Peaking, freq: 1000, q: 1.0, gain: 0 } }
+  peq_C_3:  { type: Biquad, parameters: { type: Peaking, freq: 3500, q: 1.0, gain: 0 } }
+
+  # SL
+  peq_SL_1: { type: Biquad, parameters: { type: Peaking, freq: 100,  q: 1.2, gain: 0 } }
+  peq_SL_2: { type: Biquad, parameters: { type: Peaking, freq: 900,  q: 1.0, gain: 0 } }
+  peq_SL_3: { type: Biquad, parameters: { type: Peaking, freq: 4000, q: 1.0, gain: 0 } }
+
+  # SR
+  peq_SR_1: { type: Biquad, parameters: { type: Peaking, freq: 100,  q: 1.2, gain: 0 } }
+  peq_SR_2: { type: Biquad, parameters: { type: Peaking, freq: 900,  q: 1.0, gain: 0 } }
+  peq_SR_3: { type: Biquad, parameters: { type: Peaking, freq: 4000, q: 1.0, gain: 0 } }
+
+  # SUB
+  peq_SUB_1:{ type: Biquad, parameters: { type: Peaking, freq: 35,   q: 2.0, gain: 0 } }
+  peq_SUB_2:{ type: Biquad, parameters: { type: Peaking, freq: 55,   q: 1.5, gain: 0 } }
+  peq_SUB_3:{ type: Biquad, parameters: { type: Peaking, freq: 90,   q: 1.0, gain: 0 } }
+
+  # ============================================================
+  #                   Gains par canal
+  # ============================================================
+  gain_FL:  { type: Gain, parameters: { gain: 0 } }
+  gain_FR:  { type: Gain, parameters: { gain: 0 } }
+  gain_C:   { type: Gain, parameters: { gain: 0 } }
+  gain_SL:  { type: Gain, parameters: { gain: 0 } }
+  gain_SR:  { type: Gain, parameters: { gain: 0 } }
+  gain_SUB: { type: Gain, parameters: { gain: 0 } }
+
+  # ============================================================
+  #                      Loudness Sub
+  # ============================================================
+  loudness_sub:
+    type: Loudness
+    parameters:
+      fader: Main       # Loudness v3 doit être lié au volume (Main fader)
+      low_freq: 80
+      high_freq: 8000
+      low_boost: 10
+      high_boost: 0
+
+  # ============================================================
+  #                           Delay Sub
+  # ============================================================
+  delay_SUB:
+    type: Delay
+    parameters:
+      delay: 3.5   # en millisecondes (à ajuster)
+
+pipeline:
+
+  # Mixer 2ch → 6ch
+  - type: Mixer
+    name: to6
+
+  # LR4 Highpass pour FL FR C SL SR
+  - type: Filter
+    names: [hp_lr4_120_a, hp_lr4_120_b]
+    channels: [0,1,2,3,4]
+
+  # LR4 Lowpass pour SUB
+  - type: Filter
+    names: [lp_lr4_120_a, lp_lr4_120_b]
+    channels: [5]
+
+  # Loudness sub (lié au volume Main)
+  - type: Filter
+    names: [loudness_sub]
+    channels: [5]
+
+  # Shelves + Mid par canal
+  - type: Filter
+    names: [ls_bass_FL, mid_FL, hs_treble_FL]
+    channels: [0]
+  - type: Filter
+    names: [ls_bass_FR, mid_FR, hs_treble_FR]
+    channels: [1]
+  - type: Filter
+    names: [ls_bass_C,  mid_C,  hs_treble_C]
+    channels: [2]
+  - type: Filter
+    names: [ls_bass_SL, mid_SL, hs_treble_SL]
+    channels: [3]
+  - type: Filter
+    names: [ls_bass_SR, mid_SR, hs_treble_SR]
+    channels: [4]
+  - type: Filter
+    names: [ls_bass_SUB, mid_SUB, hs_treble_SUB]
+    channels: [5]
+
+  # PEQ par canal
+  - type: Filter
+    names: [peq_FL_1, peq_FL_2, peq_FL_3]
+    channels: [0]
+  - type: Filter
+    names: [peq_FR_1, peq_FR_2, peq_FR_3]
+    channels: [1]
+  - type: Filter
+    names: [peq_C_1,  peq_C_2,  peq_C_3]
+    channels: [2]
+  - type: Filter
+    names: [peq_SL_1, peq_SL_2, peq_SL_3]
+    channels: [3]
+  - type: Filter
+    names: [peq_SR_1, peq_SR_2, peq_SR_3]
+    channels: [4]
+  - type: Filter
+    names: [peq_SUB_1, peq_SUB_2, peq_SUB_3]
+    channels: [5]
+
+  # Gains
+  - type: Filter
+    names: [gain_FL]
+    channels: [0]
+  - type: Filter
+    names: [gain_FR]
+    channels: [1]
+  - type: Filter
+    names: [gain_C]
+    channels: [2]
+  - type: Filter
+    names: [gain_SL]
+    channels: [3]
+  - type: Filter
+    names: [gain_SR]
+    channels: [4]
+  - type: Filter
+    names: [gain_SUB]
+    channels: [5]
+
+  # Delay Sub
+  - type: Filter
+    names: [delay_SUB]
+    channels: [5]
